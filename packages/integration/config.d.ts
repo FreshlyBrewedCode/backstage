@@ -28,6 +28,10 @@ export interface Config {
        */
       host: string;
       /**
+       * The owner this configuration belongs to. Can be a user or an organization.
+       */
+      owner?: string;
+      /**
        * Token used to authenticate requests.
        * @visibility secret
        */

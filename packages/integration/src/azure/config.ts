@@ -33,6 +33,13 @@ export type AzureIntegrationConfig = {
   host: string;
 
   /**
+   * The owner of the target this matches on. Can be a user or organization.
+   *
+   * If no owner is specified, only the host will be considered.
+   */
+  owner?: string;
+
+  /**
    * The authorization token to use for requests.
    *
    * If no token is specified, anonymous access is used.
@@ -50,6 +57,7 @@ export function readAzureIntegrationConfig(
   config: Config,
 ): AzureIntegrationConfig {
   const host = config.getOptionalString('host') ?? AZURE_HOST;
+  const owner = config.getOptionalString('owner');
   const token = config.getOptionalString('token');
 
   if (!isValidHost(host)) {
@@ -58,7 +66,7 @@ export function readAzureIntegrationConfig(
     );
   }
 
-  return { host, token };
+  return { host, owner, token };
 }
 
 /**

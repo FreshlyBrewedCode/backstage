@@ -16,8 +16,8 @@
 
 import fetch from 'node-fetch';
 import {
+  AzureCredentialsProvider,
   AzureIntegrationConfig,
-  getAzureRequestOptions,
 } from '@backstage/integration';
 
 export interface CodeSearchResponse {
@@ -39,6 +39,7 @@ const PAGE_SIZE = 1000;
 // codeSearch returns all files that matches the given search path.
 export async function codeSearch(
   azureConfig: AzureIntegrationConfig,
+  credentialsProvider: AzureCredentialsProvider,
   org: string,
   project: string,
   repo: string,
@@ -52,11 +53,16 @@ export async function codeSearch(
   let items: CodeSearchResultItem[] = [];
   let hasMorePages = true;
 
+  const credentials = await credentialsProvider.getCredentials({
+    url: searchUrl,
+  });
+
   do {
     const response = await fetch(searchUrl, {
-      ...getAzureRequestOptions(azureConfig, {
+      headers: {
+        ...credentials.headers,
         'Content-Type': 'application/json',
-      }),
+      },
       method: 'POST',
       body: JSON.stringify({
         searchText: `path:${path} repo:${repo || '*'}`,

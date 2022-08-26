@@ -45,6 +45,14 @@ describe('azure', () => {
       await expect(
         codeSearch(
           { host: 'dev.azure.com', token: 'ABC' },
+          {
+            getCredentials: async () => ({
+              type: 'token',
+              headers: {
+                Authorization: 'Basic OkFCQw==',
+              },
+            }),
+          },
           'shopify',
           'engineering',
           '',
@@ -93,6 +101,14 @@ describe('azure', () => {
     await expect(
       codeSearch(
         { host: 'dev.azure.com', token: 'ABC' },
+        {
+          getCredentials: async () => ({
+            type: 'token',
+            headers: {
+              Authorization: 'Basic OkFCQw==',
+            },
+          }),
+        },
         'shopify',
         'engineering',
         '',
@@ -133,6 +149,14 @@ describe('azure', () => {
     await expect(
       codeSearch(
         { host: 'dev.azure.com', token: 'ABC' },
+        {
+          getCredentials: async () => ({
+            type: 'token',
+            headers: {
+              Authorization: 'Basic OkFCQw==',
+            },
+          }),
+        },
         'shopify',
         'engineering',
         'backstage',
@@ -173,6 +197,14 @@ describe('azure', () => {
     await expect(
       codeSearch(
         { host: 'azuredevops.mycompany.com', token: 'ABC' },
+        {
+          getCredentials: async () => ({
+            type: 'token',
+            headers: {
+              Authorization: 'Basic OkFCQw==',
+            },
+          }),
+        },
         'shopify',
         'engineering',
         '',
@@ -222,6 +254,14 @@ describe('azure', () => {
     await expect(
       codeSearch(
         { host: 'dev.azure.com', token: 'ABC' },
+        {
+          getCredentials: async () => ({
+            type: 'token',
+            headers: {
+              Authorization: 'Basic OkFCQw==',
+            },
+          }),
+        },
         'shopify',
         'engineering',
         'backstage',

@@ -16,7 +16,12 @@
 
 import { TaskRunner } from '@backstage/backend-tasks';
 import { Config } from '@backstage/config';
-import { AzureIntegration, ScmIntegrations } from '@backstage/integration';
+import {
+  AzureCredentialsProvider,
+  AzureIntegration,
+  DefaultAzureCredentialsProvider,
+  ScmIntegrations,
+} from '@backstage/integration';
 import {
   EntityProvider,
   EntityProviderConnection,
@@ -51,9 +56,10 @@ export class AzureDevOpsEntityProvider implements EntityProvider {
     const providerConfigs = readAzureDevOpsConfigs(configRoot);
 
     return providerConfigs.map(providerConfig => {
-      const integration = ScmIntegrations.fromConfig(configRoot).azure.byHost(
-        providerConfig.host,
-      );
+      const integrations = ScmIntegrations.fromConfig(configRoot);
+      const integration = integrations.azure.byHost(providerConfig.host);
+      const credentialsProvider =
+        DefaultAzureCredentialsProvider.fromIntegrations(integrations);
 
       if (!integration) {
         throw new Error(
@@ -64,6 +70,7 @@ export class AzureDevOpsEntityProvider implements EntityProvider {
       return new AzureDevOpsEntityProvider(
         providerConfig,
         integration,
+        credentialsProvider,
         options.logger,
         options.schedule,
       );
@@ -73,6 +80,7 @@ export class AzureDevOpsEntityProvider implements EntityProvider {
   private constructor(
     private readonly config: AzureDevOpsConfig,
     private readonly integration: AzureIntegration,
+    private readonly credentialsProvider: AzureCredentialsProvider,
     logger: Logger,
     schedule: TaskRunner,
   ) {
@@ -125,6 +133,7 @@ export class AzureDevOpsEntityProvider implements EntityProvider {
 
     const files = await codeSearch(
       this.integration.config,
+      this.credentialsProvider,
       this.config.organization,
       this.config.project,
       this.config.repository,

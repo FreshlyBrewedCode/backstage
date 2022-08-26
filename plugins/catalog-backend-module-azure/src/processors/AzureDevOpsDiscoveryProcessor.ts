@@ -16,6 +16,7 @@
 
 import { Config } from '@backstage/config';
 import {
+  DefaultAzureCredentialsProvider,
   ScmIntegrationRegistry,
   ScmIntegrations,
 } from '@backstage/integration';
@@ -84,6 +85,8 @@ export class AzureDevOpsDiscoveryProcessor implements CatalogProcessor {
         `There is no Azure integration that matches ${location.target}. Please add a configuration entry for it under integrations.azure`,
       );
     }
+    const credentialsProvider =
+      DefaultAzureCredentialsProvider.fromIntegrations(this.integrations);
 
     const { baseUrl, org, project, repo, catalogPath } = parseUrl(
       location.target,
@@ -94,6 +97,7 @@ export class AzureDevOpsDiscoveryProcessor implements CatalogProcessor {
 
     const files = await codeSearch(
       azureConfig,
+      credentialsProvider,
       org,
       project,
       repo,

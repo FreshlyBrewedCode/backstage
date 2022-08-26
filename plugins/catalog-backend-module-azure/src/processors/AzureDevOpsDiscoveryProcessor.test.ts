@@ -22,9 +22,15 @@ import {
   parseUrl,
 } from './AzureDevOpsDiscoveryProcessor';
 import { codeSearch } from '../lib';
+import {
+  DefaultAzureCredentialsProvider,
+  ScmIntegrationRegistry,
+} from '@backstage/integration';
 
 jest.mock('../lib');
 const mockCodeSearch = codeSearch as jest.MockedFunction<typeof codeSearch>;
+const mockCreateCredentialsProvider = (_integrations: ScmIntegrationRegistry) =>
+  ({} as DefaultAzureCredentialsProvider);
 
 describe('AzureDevOpsDiscoveryProcessor', () => {
   describe('parseUrl', () => {
@@ -116,7 +122,7 @@ describe('AzureDevOpsDiscoveryProcessor', () => {
     const processor = AzureDevOpsDiscoveryProcessor.fromConfig(
       new ConfigReader({
         integrations: {
-          github: [{ host: 'dev.azure.com', token: 'blob' }],
+          azure: [{ host: 'dev.azure.com', token: 'blob' }],
         },
       }),
       { logger: getVoidLogger() },
@@ -124,6 +130,9 @@ describe('AzureDevOpsDiscoveryProcessor', () => {
 
     beforeEach(() => {
       mockCodeSearch.mockClear();
+      DefaultAzureCredentialsProvider.fromIntegrations = jest.fn(
+        mockCreateCredentialsProvider,
+      );
     });
 
     it('output all locations found on from code search', async () => {
@@ -152,7 +161,8 @@ describe('AzureDevOpsDiscoveryProcessor', () => {
       await processor.readLocation(location, false, emitter);
 
       expect(mockCodeSearch).toHaveBeenCalledWith(
-        { host: 'dev.azure.com' },
+        { host: 'dev.azure.com', token: 'blob' },
+        {},
         'shopify',
         'engineering',
         '',
@@ -198,7 +208,8 @@ describe('AzureDevOpsDiscoveryProcessor', () => {
       await processor.readLocation(location, false, emitter);
 
       expect(mockCodeSearch).toHaveBeenCalledWith(
-        { host: 'dev.azure.com' },
+        { host: 'dev.azure.com', token: 'blob' },
+        {},
         'shopify',
         'engineering',
         'backstage',
@@ -236,7 +247,8 @@ describe('AzureDevOpsDiscoveryProcessor', () => {
       await processor.readLocation(location, false, emitter);
 
       expect(mockCodeSearch).toHaveBeenCalledWith(
-        { host: 'dev.azure.com' },
+        { host: 'dev.azure.com', token: 'blob' },
+        {},
         'shopify',
         'engineering',
         '',
@@ -265,7 +277,8 @@ describe('AzureDevOpsDiscoveryProcessor', () => {
       await processor.readLocation(location, false, emitter);
 
       expect(mockCodeSearch).toHaveBeenCalledWith(
-        { host: 'dev.azure.com' },
+        { host: 'dev.azure.com', token: 'blob' },
+        {},
         'shopify',
         'engineering',
         'backstage',

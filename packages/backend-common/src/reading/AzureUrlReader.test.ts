@@ -16,6 +16,7 @@
 
 import { ConfigReader } from '@backstage/config';
 import {
+  AzureCredentialsProvider,
   AzureIntegration,
   readAzureIntegrationConfig,
 } from '@backstage/integration';
@@ -38,6 +39,12 @@ const treeResponseFactory = DefaultReadTreeResponseFactory.create({
 });
 
 const tmpDir = os.platform() === 'win32' ? 'C:\\tmp' : '/tmp';
+
+const credentialsProvider: AzureCredentialsProvider = {
+  async getCredentials() {
+    return { type: 'token' };
+  },
+};
 
 describe('AzureUrlReader', () => {
   beforeEach(() => {
@@ -163,7 +170,7 @@ describe('AzureUrlReader', () => {
           }),
         ),
       ),
-      { treeResponseFactory },
+      { treeResponseFactory, credentialsProvider },
     );
 
     beforeEach(() => {
@@ -275,7 +282,7 @@ describe('AzureUrlReader', () => {
           }),
         ),
       ),
-      { treeResponseFactory },
+      { treeResponseFactory, credentialsProvider },
     );
 
     beforeEach(() => {

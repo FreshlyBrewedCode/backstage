@@ -19,8 +19,10 @@ import {
   getAzureCommitsUrl,
   getAzureDownloadUrl,
   getAzureFileFetchUrl,
-  getAzureRequestOptions,
+  ScmIntegrationRegistry,
   ScmIntegrations,
+  DefaultAzureCredentialsProvider,
+  AzureCredentialsProvider,
 } from '@backstage/integration';
 import fetch, { Response } from 'node-fetch';
 import { Minimatch } from 'minimatch';
@@ -47,8 +49,15 @@ import { ReadUrlResponseFactory } from './ReadUrlResponseFactory';
 export class AzureUrlReader implements UrlReader {
   static factory: ReaderFactory = ({ config, treeResponseFactory }) => {
     const integrations = ScmIntegrations.fromConfig(config);
+    const credentialsProvider =
+      DefaultAzureCredentialsProvider.fromIntegrations(
+        integrations as ScmIntegrationRegistry,
+      );
     return integrations.azure.list().map(integration => {
-      const reader = new AzureUrlReader(integration, { treeResponseFactory });
+      const reader = new AzureUrlReader(integration, {
+        treeResponseFactory,
+        credentialsProvider,
+      });
       const predicate = (url: URL) => url.host === integration.config.host;
       return { reader, predicate };
     });
@@ -56,7 +65,10 @@ export class AzureUrlReader implements UrlReader {
 
   constructor(
     private readonly integration: AzureIntegration,
-    private readonly deps: { treeResponseFactory: ReadTreeResponseFactory },
+    private readonly deps: {
+      treeResponseFactory: ReadTreeResponseFactory;
+      credentialsProvider: AzureCredentialsProvider;
+    },
   ) {}
 
   async read(url: string): Promise<Buffer> {
@@ -72,11 +84,16 @@ export class AzureUrlReader implements UrlReader {
     const { signal } = options ?? {};
 
     const builtUrl = getAzureFileFetchUrl(url);
+    const credentials = await this.deps.credentialsProvider.getCredentials({
+      url,
+    });
 
     let response: Response;
     try {
       response = await fetch(builtUrl, {
-        ...getAzureRequestOptions(this.integration.config),
+        headers: {
+          ...credentials.headers,
+        },
         // TODO(freben): The signal cast is there because pre-3.x versions of
         // node-fetch have a very slightly deviating AbortSignal type signature.
         // The difference does not affect us in practice however. The cast can
@@ -111,10 +128,13 @@ export class AzureUrlReader implements UrlReader {
 
     // Get latest commit SHA
 
-    const commitsAzureResponse = await fetch(
-      getAzureCommitsUrl(url),
-      getAzureRequestOptions(this.integration.config),
-    );
+    const credentials = await this.deps.credentialsProvider.getCredentials({
+      url,
+    });
+
+    const commitsAzureResponse = await fetch(getAzureCommitsUrl(url), {
+      headers: credentials.headers,
+    });
     if (!commitsAzureResponse.ok) {
       const message = `Failed to read tree from ${url}, ${commitsAzureResponse.status} ${commitsAzureResponse.statusText}`;
       if (commitsAzureResponse.status === 404) {
@@ -129,9 +149,10 @@ export class AzureUrlReader implements UrlReader {
     }
 
     const archiveAzureResponse = await fetch(getAzureDownloadUrl(url), {
-      ...getAzureRequestOptions(this.integration.config, {
+      headers: {
+        ...credentials.headers,
         Accept: 'application/zip',
-      }),
+      },
       // TODO(freben): The signal cast is there because pre-3.x versions of
       // node-fetch have a very slightly deviating AbortSignal type signature.
       // The difference does not affect us in practice however. The cast can be
